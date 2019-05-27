@@ -8,16 +8,29 @@ class BlockHeader:
 		self.version = uint4(blockchain)
 		self.previousHash = hash32(blockchain)
 		self.merkleHash = hash32(blockchain)
+		self.hashFinalSaplingRoot = hash32(blockchain)
+		self.nVibPool = int8(blockchain)
 		self.time = uint4(blockchain)
 		self.bits = uint4(blockchain)
+		self.hashStateRoot = hash32(blockchain)
+		self.hashUTXORoot = hash32(blockchain)
 		self.nonce = uint4(blockchain)
+		self.solutionLen = varint(blockchain)
+		self.nSolution = blockchain.read(self.solutionLen)
+
 	def toString(self):
 		print "Version:\t %d" % self.version
 		print "Previous Hash\t %s" % hashStr(self.previousHash)
-		print "Merkle Root\t %s" % hashStr(self.merkleHash)
 		print "Time stamp\t "+ self.decodeTime(self.time)
+		print "Merkle Root\t %s" % hashStr(self.merkleHash)
+		print "Final sapling root hash\t %s" % hashStr(self.hashFinalSaplingRoot)
+		print "Vibpool\t %s" % self.nVibPool
 		print "Difficulty\t %d" % self.bits
+		print "State root hash\t %s" % hashStr(self.hashStateRoot)
+		print "UTXO root hash\t %s" % hashStr(self.hashUTXORoot)
 		print "Nonce\t\t %s" % self.nonce
+		print "Solution\t %s" % hashStr(self.nSolution)
+
 	def decodeTime(self, time):
 		utc_time = datetime.utcfromtimestamp(time)
 		return utc_time.strftime("%Y-%m-%d %H:%M:%S.%f+00:00 (UTC)")
@@ -89,6 +102,7 @@ class Block:
 class Tx:
 	def __init__(self, blockchain):
 		self.version = uint4(blockchain)
+		self.flag = uint1(blockchain)
 		self.inCount = varint(blockchain)
 		self.inputs = []
 		self.seq = 1
@@ -101,12 +115,14 @@ class Tx:
 			for i in range(0, self.outCount):
 				output = txOutput(blockchain)
 				self.outputs.append(output)	
+		# witness 
 		self.lockTime = uint4(blockchain)
 		
 	def toString(self):
 		print ""
 		print "="*20 + " No. %s " %self.seq + "Transaction " + "="*20
 		print "Tx Version:\t %d" % self.version
+		print "flag:\t %d" % self.flag
 		print "Inputs:\t\t %d" % self.inCount
 		for i in self.inputs:
 			i.toString()
@@ -131,6 +147,7 @@ class txInput:
 #		print "\tScriptSig:\t %s" % 
 		self.decodeScriptSig(self.scriptSig)
 		print "\tSequence:\t %8x" % self.seqNo
+
 	def decodeScriptSig(self,data):
 		hexstr = hashStr(data)
 		if 0xffffffff == self.txOutId: #Coinbase
@@ -158,13 +175,16 @@ class txInput:
 class txOutput:
 	def __init__(self, blockchain):	
 		self.value = uint8(blockchain)
+		self.flag = uint1(blockchain)
 		self.scriptLen = varint(blockchain)
 		self.pubkey = blockchain.read(self.scriptLen)
-
+		
 	def toString(self):
 		print "\tValue:\t\t %d" % self.value + " Satoshi"
+		print "\tFlag:\t\t %d" % self.flag
 		print "\tScript Len:\t %d" % self.scriptLen
 		print "\tScriptPubkey:\t %s" % self.decodeScriptPubkey(self.pubkey)
+
 	def decodeScriptPubkey(self,data):
 		hexstr = hashStr(data)
 		op_idx = int(hexstr[0:2],16)

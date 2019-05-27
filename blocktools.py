@@ -13,6 +13,9 @@ def uint4(stream):
 def uint8(stream):
 	return struct.unpack('Q', stream.read(8))[0]
 
+def int8(stream):
+	return struct.unpack('q', stream.read(8))[0]
+
 def hash32(stream):
 	return stream.read(32)[::-1]
 
